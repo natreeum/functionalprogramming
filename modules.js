@@ -6,7 +6,7 @@ const curry =
   (a, ..._) =>
     _.length ? f(a, ..._) : (..._) => f(a, ..._);
 
-const go = (...args) => reduce((acc, func) => func(acc), args);
+const go = (...args) => pReduce1((acc, func) => func(acc), args);
 
 // const map = curry((func, iter) => {
 //   let res = [];
@@ -85,16 +85,25 @@ const find = curry((f, iter) => go(iter, filter(f), take(1), ([a]) => a));
 
 const go1 = (a, f) => (a instanceof Promise ? a.then(f) : f(a));
 
+const pReduceF = (acc, a, f) =>
+  a instanceof Promise
+    ? a.then(
+        (a) => f(acc, a),
+        (e) => (e == nop ? acc : Promise.reject(e))
+      )
+    : f(acc, a);
+
+const head = (iter) => go1(take(1, iter), ([h]) => h);
+
 const pReduce1 = curry((func, acc, iter) => {
-  if (!iter) {
-    iter = acc[Symbol.iterator]();
-    acc = iter.next().value;
-  }
+  if (!iter) return pReduce1(func, head((iter = acc[Symbol.iterator]())), iter);
+
+  iter = iter[Symbol.iterator]();
+
   return go1(acc, function recur(acc) {
     let cur;
     while (!(cur = iter.next()).done) {
-      const a = cur.value;
-      acc = func(acc, a);
+      acc = pReduceF(acc, cur.value, func);
       if (acc instanceof Promise) return acc.then(recur);
     }
     return acc;
@@ -118,4 +127,5 @@ module.exports = {
   pGo1,
   go1,
   nop,
+  pReduce1,
 };

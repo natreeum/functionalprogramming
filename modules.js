@@ -112,6 +112,11 @@ const pReduce1 = curry((func, acc, iter) => {
 
 const pGo1 = (...args) => pReduce1((acc, func) => func(acc), args);
 
+function noop() {}
+const catchNoop = (arr) => (
+  arr.forEach((e) => (e instanceof Promise ? e.catch(noop) : a)), arr
+);
+
 module.exports = {
   log,
   curry,
@@ -128,4 +133,6 @@ module.exports = {
   go1,
   nop,
   pReduce1,
+  noop,
+  catchNoop,
 };
